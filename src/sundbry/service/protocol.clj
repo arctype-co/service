@@ -1,5 +1,18 @@
 (ns sundbry.service.protocol)
 
-(defprotocol Lifecycle
+(defprotocol PLifecycle
   (start [_])
   (stop [_]))
+
+(defprotocol PAlertHandler
+  (exception [this ex])
+  (ring-exception [this ex request]))
+
+(defprotocol PHttpHandler
+  (ring-handler [this]))
+
+; Provide default implementation
+(extend-type Object
+  PLifecycle
+  (start [this] this)
+  (stop [this] this))
