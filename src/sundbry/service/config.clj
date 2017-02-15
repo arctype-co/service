@@ -4,6 +4,7 @@
   (:require
     [clojure.java.io :as io]
     [clojure.tools.logging :as log]
+    [clojure.walk :as walk]
     [yaml.core :as yaml]
     [schema.core :as S]))
 
@@ -16,7 +17,8 @@
 
 (defn- recursive-read-conf
   [file-path]
-  (let [cfg (yaml/from-file file-path)]
+  (let [cfg (yaml/from-file file-path)
+        cfg (walk/keywordize-keys cfg)]
     (apply merge
            (dissoc cfg :include)
            (when (some? (:include cfg))
