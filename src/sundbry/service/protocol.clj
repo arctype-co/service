@@ -11,6 +11,9 @@
 (defprotocol PHttpHandler
   (ring-handler [this]))
 
+(defprotocol PJdbcConnection
+  (conn [this]))
+
 ; Provide default implementation
 (extend-type Object
   PLifecycle

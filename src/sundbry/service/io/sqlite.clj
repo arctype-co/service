@@ -11,16 +11,16 @@
     [java.sql SQLException]))
 
 (def Config
-  {:dbname S/Str})
+  {:db-spec {S/Keyword S/Any}})
 
 (defn- connect
   "Open a jdbc connection pool"
   [config]
   ; http://clojure.github.io/java.jdbc/#clojure.java.jdbc/get-connection
-  (let [params (merge {:dbtype "sqlite"} config)]
+  (let [db-spec (:db-spec config)]
     (log/debug {:message "Opening JDBC connection"
-                :params params})
-    (jdbc/get-connection params)))
+                :db-spec db-spec})
+    (jdbc/get-connection db-spec)))
 
 (defn- disconnect
   "Release a jdbc connection pool"
@@ -28,11 +28,6 @@
   (log/debug {:message "Closing JDBC connection"})
   (.close db)
   nil)
-
-(defn conn
-  "Return a jdbc connection handle"
-  [this]
-  (:db this))
 
 (defn health-check!
   [this]
@@ -54,17 +49,21 @@
   [results]
   (second (ffirst results)))
 
-(defrecord SQLiteClient [config db]
+(defrecord SQLiteClient [config connection]
   PLifecycle
   (start [this]
     (log/info "Starting SQLite client")
     (-> this
-        (assoc :db (connect config))))
+        (assoc :connection (connect config))))
 
   (stop [this]
     (log/info "Stopping SQLite client")
     (-> this
-        (update :db disconnect))))
+        (update :connection disconnect)))
+
+  PJdbcConnection
+  (conn [this] 
+    {:connection connection}))
 
 (S/defn create
   [resource-name config :- Config]
