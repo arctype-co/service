@@ -6,10 +6,12 @@
   [[org.clojure/clojure "1.8.0"]
    [org.clojure/core.async "0.2.374"]
    [org.clojure/core.match "0.3.0-alpha4"]
+   [org.clojure/java.jdbc "0.7.0-alpha1"]
    [org.clojure/tools.cli "0.3.3"]
    [org.clojure/tools.namespace "0.2.10"]
    [org.clojure/tools.nrepl "0.2.12"]
    [org.clojure/tools.logging "0.3.1"]
+   [org.xerial/sqlite-jdbc "3.16.1"]
    [cheshire "5.6.1"]
    [compojure "1.5.0"]
    [crypto-password "0.1.3"
