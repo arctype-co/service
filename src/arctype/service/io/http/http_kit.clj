@@ -1,10 +1,10 @@
-(ns sundbry.service.io.http.http-kit
+(ns arctype.service.io.http.http-kit
   (:require
     [clojure.tools.logging :as log]
     [org.httpkit.server :as http-kit]
     [schema.core :as S]
     [sundbry.resource :as resource]
-    [sundbry.service.protocol :refer :all]))
+    [arctype.service.protocol :refer :all]))
 
 (def Config
   {(S/optional-key :ip) S/Str ; which IP to bind, default to 0.0.0.0
