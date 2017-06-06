@@ -1,4 +1,4 @@
-(ns sundbry.service.io.sqlite
+(ns arctype.service.io.sqlite
   (:require
     [cheshire.core :as json]
     [clojure.core.async :as async]
@@ -6,7 +6,7 @@
     [clojure.tools.logging :as log]
     [schema.core :as S]
     [sundbry.resource :as resource :refer [with-resources]]
-    [sundbry.service.protocol :refer :all])
+    [arctype.service.protocol :refer :all])
   (:import
     [java.sql SQLException]))
 

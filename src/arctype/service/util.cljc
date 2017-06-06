@@ -1,4 +1,4 @@
-(ns sundbry.service.util
+(ns arctype.service.util
   #?(:clj
       (:require
         [clojure.core.async :as async]

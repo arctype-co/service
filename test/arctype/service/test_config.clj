@@ -1,7 +1,7 @@
-(ns sundbry.service.test-config
+(ns arctype.service.test-config
   (:require
     [clojure.test :refer :all]
-    [sundbry.service.config :as config]))
+    [arctype.service.config :as config]))
 
 (deftest test-read-config
   (let [cfg (config/read "resources/sample.yml")]

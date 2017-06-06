@@ -1,4 +1,4 @@
-(ns sundbry.service.protocol)
+(ns arctype.service.protocol)
 
 (defprotocol PLifecycle
   (start [_])

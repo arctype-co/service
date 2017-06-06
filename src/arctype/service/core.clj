@@ -1,8 +1,8 @@
 (ns ^{:doc "Core system patterns"}
-  sundbry.service.core
+  arctype.service.core
   (:require
     [clojure.core.async :as async]
-    [sundbry.service.util :refer [<??]]))
+    [arctype.service.util :refer [<??]]))
 
 (defn thread-pool
   [num-threads make-thread]

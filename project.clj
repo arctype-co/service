@@ -1,7 +1,4 @@
-(defproject sundbry/service "0.1.0-SNAPSHOT" 
-  :repositories 
-  {"clojars-mirror" {:url "https://clojars-mirror.tcrawley.org/repo/"}}
-
+(defproject arctype/service "0.1.0-SNAPSHOT" 
   :dependencies
   [[org.clojure/clojure "1.8.0"]
    [org.clojure/core.async "0.2.374"]

@@ -1,5 +1,5 @@
 (ns ^{:doc "Config settings"}
-  sundbry.service.config
+  arctype.service.config
   (:refer-clojure :exclude [read])
   (:require
     [clojure.java.io :as io]

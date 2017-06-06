@@ -1,10 +1,10 @@
 (ns ^{:doc "Alert client"}
-  sundbry.service.io.alert
+  arctype.service.io.alert
   (:require
     [clojure.tools.logging :as log]
     [schema.core :as S]
     [sundbry.resource :as resource]
-    [sundbry.service.protocol :refer :all]))
+    [arctype.service.protocol :refer :all]))
 
 (def Config
   {(S/optional-key :log?) S/Bool})

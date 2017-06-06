@@ -1,4 +1,4 @@
-(ns sundbry.service.model.security
+(ns arctype.service.model.security
   (:require
     [schema.core :as S])
   (:import

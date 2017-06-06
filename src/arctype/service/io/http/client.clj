@@ -1,5 +1,5 @@
 (ns ^{:doc "Dedicated HTTP client"}
-  sundbry.service.io.http.client
+  arctype.service.io.http.client
   (:require
     [clojure.core.async :as async :refer [<!! >!!]]
     [clojure.java.io :as io]
@@ -8,9 +8,9 @@
     [schema.core :as S]
     [sundbry.resource :as resource]
     [throttler.core :as throttler]
-    [sundbry.service.util :refer [thread-try]]
-    [sundbry.service.protocol :refer :all]
-    [sundbry.service.core :as sys-core])
+    [arctype.service.util :refer [thread-try]]
+    [arctype.service.protocol :refer :all]
+    [arctype.service.core :as sys-core])
   (:import
     [org.httpkit.client HttpClient]))
 
