@@ -17,12 +17,16 @@
    [crypto-password "0.1.3"
     :exclusions [commons-codec]]
    [io.forward/yaml "1.0.5"]
+   [http-kit "2.1.19"]
    [log4j/log4j "1.2.17"]
-   [sundbry/resource "0.4.0"]
+   [prismatic/schema "1.1.0"]
    [ring "1.4.0"]
    [ring-cors "0.1.7"]
    [ring/ring-json "0.4.0"]
-   [prismatic/schema "1.1.0"]]
+   [sundbry/resource "0.4.0"]
+   [throttler "1.0.0"
+    :exclusions [org.clojure/clojure
+                 org.clojure/core.async]]]
 
   :source-paths ["src"]
 
