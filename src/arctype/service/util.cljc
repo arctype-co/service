@@ -3,7 +3,9 @@
       (:require
         [clojure.core.async :as async]
         [clojure.tools.logging :as log]
-        [schema.core :as S]))
+        [schema.core :as S]
+        [schema.coerce :as coerce]
+        [schema.utils :as schema-utils]))
   #?(:cljs
       (:require
         [cljs.core.async :as async]
@@ -38,6 +40,18 @@
       (throw-err (async/<!! ch))))
 
 #?(:clj
+    (defmacro go-try
+      "A core.async/go block, with an implicit try...catch. Exceptions are
+      returned (put onto the go block's result channel)."
+      [& body]
+      `(async/go
+         (try
+           (do ~@body)
+           (catch Throwable t#
+             (log/error t# "Exception in async go block")
+             t#)))))
+
+#?(:clj
     (defmacro thread-try
       "Similar to go-try but uses thread instead of go."
       [& body]
@@ -49,15 +63,39 @@
              t#)))))
 
 #?(:clj
-(defn xform-validator
-  "Returns a transducer to validate schema-def"
-  [schema-def handle-error]
-  (let [validate (S/validator schema-def)]
-    (map (fn [result]
-           (if (instance? Throwable result)
-             result
-             (try (validate result)
-              (catch Exception e
-               (if (some? handle-error)
-                  (handle-error e)
-                  e)))))))))
+    (defn xform-validator
+      "Returns a transducer to validate schema-def"
+      [schema-def]
+      (let [validate (S/validator schema-def)]
+        (map (fn [result]
+               (if (instance? Throwable result)
+                 result
+                 (try (validate result)
+                      (catch Exception e
+                        e))))))))
+
+#?(:clj
+    (defn xform-json-coercer
+      "Returns a transducer to coerce schema-def from JSON"
+      [schema-def]
+      (let [coerce (coerce/coercer schema-def coerce/json-coercion-matcher)]
+        (map (fn [result]
+               (if (instance? Throwable result)
+                 result
+                 (let [result (coerce result)]
+                   (if (schema-utils/error? result)
+                     (ex-info "Coercion error" result)
+                     result))))))))
+
+#?(:clj
+    (defn xform-string-coercer
+      "Returns a transducer to coerce schema-def from string values"
+      [schema-def]
+      (let [coerce (coerce/coercer schema-def coerce/string-coercion-matcher)]
+        (map (fn [result]
+               (if (instance? Throwable result)
+                 result
+                 (let [result (coerce result)]
+                   (if (schema-utils/error? result)
+                     (ex-info "Coercion error" result)
+                     result))))))))

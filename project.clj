@@ -16,7 +16,7 @@
    [io.forward/yaml "1.0.5"]
    [http-kit "2.1.19"]
    [log4j/log4j "1.2.17"]
-   [prismatic/schema "1.1.0"]
+   [prismatic/schema "1.1.6"]
    [ring "1.4.0"]
    [ring-cors "0.1.7"]
    [ring/ring-json "0.4.0"]
