@@ -20,11 +20,15 @@
    :burst S/Int})
 
 (def Config
-  {:connections S/Int ; size of connection pool
-   :msg-queue-size S/Int ; # of messages to buffer
-   :retry-limit S/Int ; # Max # of retries for a single msg
-   (S/optional-key :trace-topic) S/Keyword ; Topic to record request and response logs
+  {(S/optional-key :connections) S/Int ; size of connection pool
+   (S/optional-key :msg-queue-size) S/Int ; # of messages to buffer
+   (S/optional-key :retry-limit) S/Int ; # Max # of retries for a single msg
    (S/optional-key :throttle) ThrottleConfig})
+
+(def ^:private default-config
+  {:connections 2
+   :msg-queue-size 16
+   :retry-limit 0})
 
 (defn- handle-response
   [{:keys [result] :as request} response retry-count retry-limit]
@@ -45,15 +49,8 @@
       (async/close! result)
       nil)))
 
-#_(defn- trace-event!
-  [kafka topic event-type event-key data]
-  (let [payload {:event event-type
-                 :timestamp (System/currentTimeMillis)
-                 :data data}]
-    (kafka/put! kafka topic (str event-key) payload)))
-
 (defn- do-request
-  [{{:keys [trace-topic]} :config :as this}
+  [this
    {:keys [result] :as request}]
   (let [http-request (dissoc request :client :result)
         ts (System/currentTimeMillis)
@@ -64,12 +61,6 @@
                 :request http-request
                 :response response-data
                 :ms elapsed-ms})
-    #_(when (some? trace-topic)
-      (let [kafka (resource/require this "kafka")]
-        (trace-event! kafka trace-topic :request
-                      (hash http-request) {:request http-request
-                                           :response response-data
-                                           :ms elapsed-ms})))
     response))
 
 (defn- create-throttle
@@ -81,7 +72,7 @@
 (defn- worker-thread
   [{:keys [msg-queue config] :as this} thread-num]
   (thread-try
-    (let [{:keys [retry-limit trace-topic]} config
+    (let [{:keys [retry-limit]} config
           client (HttpClient.)
           msg-throttle (create-throttle (:throttle config) msg-queue)]
       (loop [retry-msg nil
@@ -171,9 +162,8 @@
   )
 
 (S/defn create
-  [resource-name :- S/Str
+  [resource-name
    config :- Config]
   (resource/make-resource
-    (map->MultiHttpClient {:config config})
-    resource-name
-    #{"kafka"}))
+    (map->MultiHttpClient {:config (merge default-config config)})
+    resource-name))
