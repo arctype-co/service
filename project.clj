@@ -10,6 +10,7 @@
    [org.clojure/tools.logging "0.3.1"]
    [org.xerial/sqlite-jdbc "3.16.1"]
    [cheshire "5.6.1"]
+   [commons-codec/commons-codec "1.10"]
    [compojure "1.5.0"]
    [crypto-password "0.1.3"
     :exclusions [commons-codec]]
