@@ -8,9 +8,9 @@
 
 (def FsmSpec
   {:states {S/Keyword S/Any} ; Keyword -> (fn [client])
-   :transitions [(S/one S/Keyword :current-state)
-                 (S/one S/Keyword :transition)
-                 (S/one S/Keyword :next-state)]
+   :transitions [[(S/one S/Keyword :current-state)
+                  (S/one S/Keyword :transition)
+                  (S/one S/Keyword :next-state)]]
    :initial-state S/Keyword})
 
 (def Config
@@ -20,7 +20,7 @@
 (defn- create-events
   [this]
   (let [ch (async/chan (async/buffer 32))]
-    (async/put! ch ::begin)
+    (async/put! ch [::begin])
     ch))
 
 (defn- destroy-events
@@ -30,16 +30,21 @@
 
 (defn- transition-state
   "Return the new state, or nil if no valid transition."
-  [{:keys [compiled-transitions]} current-state transition]
-  (get compiled-transitions [current-state transition]))
+  [{:keys [compiled-transitions initial-state]} current-state transition]
+  (if (= ::begin transition)
+    initial-state
+    (get compiled-transitions [current-state transition])))
 
 (defn- enter-state
   "Apply state entry"
   [{{states :states} :spec
-    client :client} new-state]
+    client :client
+    :as this}
+   new-state
+   transition-args]
   (if-let [state-fn (get states new-state)]
     (do
-      (state-fn client)
+      (apply state-fn this client transition-args)
       new-state)
     (throw (ex-info "Undefined FSM state entered!"
                     {:state new-state}))))
@@ -48,12 +53,12 @@
   [{:keys [events spec state] :as this}]
   (thread-try
     (loop []
-      (when-let [[transition & args] (<?? events)]
+      (when-let [[transition & transition-args] (<?? events)]
         (when (not= ::terminate transition)
           (swap! state
                  (fn [cur-state]
                    (if-let [next-state (transition-state spec cur-state transition)]
-                     (enter-state this next-state)
+                     (enter-state this next-state transition-args)
                      (do
                        (log/debug {:message "Invalid transition"
                                    :current-state cur-state
@@ -63,9 +68,13 @@
 
 (defn- destroy-thread
   [this]
-  (async/put! (:events this) ::terminate)
+  (async/put! (:events this) [::terminate])
   (<?? (:thread this))
   nil)
+
+(defn transition!
+  [{:keys [events]} transition & args]
+  (async/put! events (into [transition] args)))
 
 (defrecord FiniteStateMachine [spec client state events thread compiled-transitions]
   PLifecycle
@@ -81,18 +90,18 @@
     (as-> this this
         (assoc this :thread (destroy-thread this))
         (assoc this :events (destroy-events this))
-        (assoc this :state nil))))
+        (dissoc this :state))))
 
 
 
-(S/defn ^:private compile-transitions :- {[S/Keyword] S/Keyword} ; {[current-state transition] new-state}
-  [transition-spec]
-  (into {}
-        (for [[from-state transition to-state]]
-          {[from-state transition] to-state})))
+(defn- compile-transitions 
+  [{:keys [transitions] :as spec}]
+  (assoc spec :compiled-transitions
+         (into {}
+               (for [[from-state transition to-state] transitions]
+                 {[from-state transition] to-state}))))
 
 (S/defn create
   [config :- Config]
   (map->FiniteStateMachine
-    (assoc config
-           :compiled-transitions (compile-transitions (:transitions (:spec config))))))
+    (update config :spec compile-transitions)))
