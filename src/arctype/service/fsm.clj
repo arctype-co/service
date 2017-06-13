@@ -55,21 +55,29 @@
     (loop []
       (when-let [[transition & transition-args] (<?? events)]
         (when (not= ::terminate transition)
-          (swap! state
-                 (fn [cur-state]
-                   (if-let [next-state (transition-state spec cur-state transition)]
-                     (enter-state this next-state transition-args)
-                     (do
-                       (log/debug {:message "Invalid transition"
-                                   :current-state cur-state
-                                   :transition transition})
-                       cur-state))))
+          (try
+            (swap! state
+                   (fn [cur-state]
+                     (if-let [next-state (transition-state spec cur-state transition)]
+                       (enter-state this next-state transition-args)
+                       (do
+                         (log/debug {:message "Invalid transition"
+                                     :current-state cur-state
+                                     :transition transition})
+                         cur-state))))
+            (catch Exception e
+              (log/error {:message "FSM state transition failed!"} e)))
           (recur))))))
 
 (defn- destroy-thread
   [this]
   (async/put! (:events this) [::terminate])
   (<?? (:thread this))
+  nil)
+
+(defn no-op
+  "State function to do nothing"
+  [fsm client & args]
   nil)
 
 (defn transition!
