@@ -100,7 +100,9 @@
         (assoc this :events (destroy-events this))
         (dissoc this :state))))
 
-
+(defmethod print-method FiniteStateMachine [{:keys [state] :as this} writer]
+  (let [cur-state (when (some? state) @state)]
+    (print-simple (str "FiniteStateMachine[state=" cur-state "]#" (hash this)) writer)))
 
 (defn- compile-transitions 
   [{:keys [transitions] :as spec}]
