@@ -63,7 +63,8 @@
                        (do
                          (log/debug {:message "Invalid transition"
                                      :current-state cur-state
-                                     :transition transition})
+                                     :transition transition
+                                     :transition-args transition-args})
                          cur-state))))
             (catch Exception e
               (log/error {:message "FSM state transition failed!"} e)))
@@ -79,6 +80,11 @@
   "State function to do nothing"
   [fsm client & args]
   nil)
+
+(defn state
+  "Return current state."
+  [this]
+  (deref (:state this)))
 
 (defn transition!
   [{:keys [events]} transition & args]

@@ -12,6 +12,11 @@
         [schema.core :as S])))
 
 #?(:clj
+    (defn error?
+      [obj]
+      (instance? Throwable obj)))
+
+#?(:clj
     (defn throw-err
       "Throw element if it is Throwable, otherwise return it."
       [element]
