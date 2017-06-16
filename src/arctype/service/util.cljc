@@ -108,7 +108,9 @@
 #?(:clj 
     (defmacro maybe
       [& body]
-      (try 
-        (do ~@body)
-        (catch Exception e
-          nil))))
+      `(try 
+         (do ~@body)
+         (catch Exception e#
+           (log/debug {:message "Maybe not"
+                       :error e#})
+           nil))))
