@@ -104,3 +104,11 @@
                    (if (schema-utils/error? result)
                      (ex-info "Coercion error" result)
                      result))))))))
+
+#?(:clj 
+    (defmacro maybe
+      [& body]
+      (try 
+        (do ~@body)
+        (catch Exception e
+          nil))))
