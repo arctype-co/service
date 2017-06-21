@@ -11,6 +11,14 @@
         [cljs.core.async :as async]
         [schema.core :as S])))
 
+(defn rmerge [left right]
+  (if (map? left)
+    (if (map? right)
+      (merge-with rmerge left right)
+      (throw #?(:clj (Exception. "Map structure mismatch")
+                     :cljs (js/Error "Map structure mismatch"))))
+    (if (some? right) right left)))
+
 #?(:clj
     (defn error?
       [obj]

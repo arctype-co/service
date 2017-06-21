@@ -9,6 +9,7 @@
    [org.clojure/tools.nrepl "0.2.12"]
    [org.clojure/tools.logging "0.3.1"]
    [org.xerial/sqlite-jdbc "3.16.1"]
+   [com.mchange/c3p0 "0.9.5.2"] ; postgres
    [cheshire "5.6.1"]
    [commons-codec/commons-codec "1.10"]
    [compojure "1.5.0"]
@@ -17,6 +18,7 @@
    [io.forward/yaml "1.0.5"]
    [http-kit "2.1.19"]
    [log4j/log4j "1.2.17"]
+   [org.postgresql/postgresql "9.4.1208"] ; postgres
    [prismatic/schema "1.1.6"]
    [ring "1.4.0"]
    [ring-cors "0.1.7"]
@@ -27,6 +29,7 @@
                  org.clojure/core.async]]]
 
   :source-paths ["src"]
+  :java-source-paths ["java-src"]
 
   :test-selectors
   {:default #(not (:skip %))
