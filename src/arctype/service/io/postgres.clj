@@ -45,7 +45,7 @@
                ;; expire connections after 3 hours of inactivity:
                (.setMaxIdleTime max-idle-time-s)
                ;; Provide a connection customizer for explicit behavior
-               (.setConnectionCustomizerClassName "tender.java.service.io.pg.ReadCommittedConnectionCustomizer"))]
+               (.setConnectionCustomizerClassName "arctype.java.service.io.postgres.ReadCommittedConnectionCustomizer"))]
     {:datasource cpds}))
 
 (defn- disconnect
