@@ -67,7 +67,7 @@
                                      :transition-args transition-args})
                          cur-state))))
             (catch Exception e
-              (log/error {:message "FSM state transition failed!"} e)))
+              (log/error e {:message "FSM state transition failed!"})))
           (recur))))))
 
 (defn- destroy-thread
