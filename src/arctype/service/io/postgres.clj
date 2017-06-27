@@ -51,7 +51,8 @@
 (defn- disconnect
   "Release a jdbc connection pool"
   [db]
-  (DataSources/destroy (:datasource db)) 
+  ;(DataSources/destroy (:datasource db)) 
+  (.close (:datasource db))
   nil)
 
 (defn health-check!
