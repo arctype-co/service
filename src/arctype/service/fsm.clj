@@ -11,11 +11,16 @@
    :transitions [[(S/one S/Keyword :current-state)
                   (S/one S/Keyword :transition)
                   (S/one S/Keyword :next-state)]]
-   :initial-state S/Keyword})
+   :initial-state S/Keyword
+   :terminal-states #{S/Keyword}})
+
+(def default-config
+  {:stop-timeout-ms 30000})
 
 (def Config
   {:client S/Any
-   :spec FsmSpec})
+   :spec FsmSpec
+   (S/optional-key :stop-timeout-ms) S/Int})
 
 (defn- create-events
   [this]
@@ -55,25 +60,35 @@
     (loop []
       (when-let [[transition & transition-args] (<?? events)]
         (when (not= ::terminate transition)
-          (try
-            (swap! state
-                   (fn [cur-state]
-                     (if-let [next-state (transition-state spec cur-state transition)]
-                       (enter-state this next-state transition-args)
-                       (do
-                         (log/debug {:message "Invalid transition"
-                                     :current-state cur-state
-                                     :transition transition
-                                     :transition-args transition-args})
-                         cur-state))))
-            (catch Exception e
-              (log/error e {:message "FSM state transition failed!"})))
-          (recur))))))
+          (let [new-state 
+                (try
+                  (swap! state
+                         (fn [cur-state]
+                           (if-let [next-state (transition-state spec cur-state transition)]
+                             (enter-state this next-state transition-args)
+                             (do
+                               (log/debug {:message "Invalid transition"
+                                           :current-state cur-state
+                                           :transition transition
+                                           :transition-args transition-args})
+                               cur-state))))
+                  (catch Exception e
+                    (log/error e {:message "FSM state transition failed!"})))]
+            (if (contains? (:terminal-states spec) new-state)
+              (log/debug {:message "FSM reached terminal state."
+                          :state new-state})
+              (recur))))))
+    (log/debug {:message "FSM thread terminated."})))
 
 (defn- destroy-thread
-  [this]
-  (async/put! (:events this) [::terminate])
-  (<?? (:thread this))
+  [{:keys [stop-timeout-ms thread events] :as this}]
+  ; Wait for graceful stop
+  (let [[_ end] (async/alts!! [thread (async/timeout stop-timeout-ms)])]
+    (when (not= thread end) ; timeout
+      (log/warn {:message "FSM termination timed out."
+                 :stop-timeout-ms stop-timeout-ms})
+      ; Ensure thread termination
+      (async/put! events [::terminate])))
   nil)
 
 (defn no-op
@@ -104,7 +119,10 @@
     (as-> this this
         (assoc this :thread (destroy-thread this))
         (assoc this :events (destroy-events this))
-        (dissoc this :state))))
+        (dissoc this :state)
+        (do
+          (log/debug {:message "FSM stopped"})
+          this))))
 
 (defmethod print-method FiniteStateMachine [{:keys [state] :as this} writer]
   (let [cur-state (when (some? state) @state)]
@@ -119,5 +137,6 @@
 
 (S/defn create
   [config :- Config]
-  (map->FiniteStateMachine
-    (update config :spec compile-transitions)))
+  (let [config (merge default-config config)]
+    (map->FiniteStateMachine
+      (update config :spec compile-transitions))))
