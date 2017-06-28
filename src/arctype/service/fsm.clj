@@ -81,11 +81,12 @@
     (log/debug {:message "FSM thread terminated."})))
 
 (defn- destroy-thread
-  [{:keys [stop-timeout-ms thread events] :as this}]
+  [{:keys [stop-timeout-ms thread events state] :as this}]
   ; Wait for graceful stop
   (let [[_ end] (async/alts!! [thread (async/timeout stop-timeout-ms)])]
     (when (not= thread end) ; timeout
       (log/warn {:message "FSM termination timed out."
+                 :state @state
                  :stop-timeout-ms stop-timeout-ms})
       ; Ensure thread termination
       (async/put! events [::terminate])))
@@ -119,7 +120,6 @@
     (as-> this this
         (assoc this :thread (destroy-thread this))
         (assoc this :events (destroy-events this))
-        (dissoc this :state)
         (do
           (log/debug {:message "FSM stopped"})
           this))))
