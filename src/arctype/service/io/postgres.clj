@@ -22,19 +22,26 @@
     :user S/Str
     :password S/Str}
    (S/optional-key :max-idle-time-s) S/Int
-   (S/optional-key :excess-idle-time-s) S/Int})
+   (S/optional-key :excess-idle-time-s) S/Int
+   (S/optional-key :serializable?) S/Bool ; Enable serializable connection pool
+   })
 
 (def default-config
   {:max-idle-time-s (* 3 60 60) ; 3 hrs
    :excess-idle-time-s (* 30 60) ; 30 mins
+   :serializable? false
    :creds {:classname "org.postgresql.Driver"
            :subprotocol "postgresql"}})
+
+(def ^:private read-committed-customizer "arctype.java.service.io.postgres.ReadCommittedConnectionCustomizer")
+(def ^:private serializable-customizer "arctype.java.service.io.postgres.SerializableConnectionCustomizer")
 
 (defn- connect
   "Open a jdbc connection pool"
   [{creds :creds
     max-idle-time-s :max-idle-time-s
-    excess-idle-time-s :excess-idle-time-s}]
+    excess-idle-time-s :excess-idle-time-s}
+   customizer-class]
   (let [cpds (doto (ComboPooledDataSource.)
                (.setDriverClass (:classname creds)) 
                (.setJdbcUrl (str "jdbc:" (:subprotocol creds) ":" (:subname creds)))
@@ -45,14 +52,13 @@
                ;; expire connections after 3 hours of inactivity:
                (.setMaxIdleTime max-idle-time-s)
                ;; Provide a connection customizer for explicit behavior
-               (.setConnectionCustomizerClassName "arctype.java.service.io.postgres.ReadCommittedConnectionCustomizer"))]
+               (.setConnectionCustomizerClassName customizer-class))]
     {:datasource cpds}))
 
 (defn- disconnect
   "Release a jdbc connection pool"
   [db]
-  ;(DataSources/destroy (:datasource db)) 
-  (.close (:datasource db))
+  (DataSources/destroy (:datasource db)) 
   nil)
 
 (defn health-check!
@@ -80,17 +86,23 @@
   [results]
   (second (ffirst results)))
 
-(defrecord PostgresClient [config db]
+(defn serial-conn
+  [this]
+  (:serial-db this))
+
+(defrecord PostgresClient [config db serial-db]
   PLifecycle
   (start [this]
     (log/info "Starting Postgres client")
-    (-> this
-        (assoc :db (connect config))))
+    (cond-> this
+        true (assoc :db (connect config read-committed-customizer))
+        (:serializable? config) (assoc :serial-db (connect config serializable-customizer))))
 
   (stop [this]
     (log/info "Stopping Postgres client")
-    (-> this
-        (update :db disconnect)))
+    (cond-> this
+      (:serializable? config) (update :serial-db disconnect)
+      true (update :db disconnect)))
   
   PJdbcConnection
 
