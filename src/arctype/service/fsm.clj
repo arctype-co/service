@@ -104,7 +104,9 @@
 
 (defn transition!
   [{:keys [events]} transition & args]
-  (async/put! events (into [transition] args)))
+  (if events 
+    (async/put! events (into [transition] args))
+    false))
 
 (defrecord FiniteStateMachine [spec client state events thread compiled-transitions]
   PLifecycle
