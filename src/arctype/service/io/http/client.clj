@@ -126,7 +126,10 @@
                       (= 300 status) ((or (:300 handlers) handle-unknown) response)
                       (= 500 status) ((or (:500 handlers) handle-error) response)
                       (<= 400 status) ((or (get handlers (keyword (str status))) handle-error) response)
-                      :else (handle-unknown response))]
+                      :else 
+                      (let [handler (or (get handlers (keyword (str status)))
+                                        handle-unknown)]
+                        (handler response)))]
          (rf result out)
          result)))))
 
