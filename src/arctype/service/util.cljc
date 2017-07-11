@@ -97,7 +97,7 @@
                  result
                  (let [result (coerce result)]
                    (if (schema-utils/error? result)
-                     (ex-info "Coercion error" result)
+                     (ex-info "Coercion error" (into {} result))
                      result))))))))
 
 #?(:clj
@@ -110,7 +110,7 @@
                  result
                  (let [result (coerce result)]
                    (if (schema-utils/error? result)
-                     (ex-info "Coercion error" result)
+                     (ex-info "Coercion error" (into {} result))
                      result))))))))
 
 #?(:clj 
