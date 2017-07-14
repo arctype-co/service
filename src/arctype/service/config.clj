@@ -15,10 +15,20 @@
 (def ^:dynamic *config-file*
   (or (environment-config-path) "resources/config.yml"))
 
+(defn- parse-keywords
+  [dict]
+  (walk/postwalk
+    (fn [x]
+      (if (and (string? x) (.startsWith x ":"))
+        (keyword (.substring x 1))
+        x))
+    dict))
+
 (defn- recursive-read-conf
   [file-path]
-  (let [cfg (yaml/from-file file-path)
-        cfg (walk/keywordize-keys cfg)]
+  (let [cfg (-> (yaml/from-file file-path)
+                (walk/keywordize-keys)
+                (parse-keywords))]
     (apply merge
            (dissoc cfg :include)
            (when (some? (:include cfg))
