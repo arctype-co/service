@@ -122,3 +122,11 @@
            (log/debug {:message "Maybe not"
                        :error e#})
            nil))))
+
+#?(:clj 
+    (defmacro possibly
+      [& body]
+      `(try 
+         (do ~@body)
+         (catch Exception e#
+           e#))))
