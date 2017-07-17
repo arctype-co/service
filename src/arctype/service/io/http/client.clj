@@ -23,7 +23,9 @@
   {(S/optional-key :connections) S/Int ; size of connection pool
    (S/optional-key :msg-queue-size) S/Int ; # of messages to buffer
    (S/optional-key :retry-limit) S/Int ; # Max # of retries for a single msg
-   (S/optional-key :throttle) ThrottleConfig})
+   (S/optional-key :throttle) ThrottleConfig
+   (S/optional-key :proxy-host) S/Str
+   (S/optional-key :proxy-port) S/Int})
 
 (def ^:private default-config
   {:connections 2
@@ -140,8 +142,12 @@
 (defn request!
   ([this req]
    (request! this req (async/chan 1 identity-xform-response identity)))
-  ([{:keys [msg-queue]} req chan]
-   (async/put! msg-queue (assoc req :result chan))
+  ([{:keys [msg-queue config]} req chan]
+   (let [{:keys [proxy-host proxy-port]} config
+         req (cond-> (assoc req :result chan)
+               (some? proxy-host) (assoc :proxy-host proxy-host)
+               (some? proxy-port) (assoc :proxy-port proxy-port))]
+     (async/put! msg-queue req))
    chan))
 
 (defrecord MultiHttpClient [config msg-queue thread-pool]
