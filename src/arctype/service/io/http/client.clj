@@ -24,8 +24,7 @@
    (S/optional-key :msg-queue-size) S/Int ; # of messages to buffer
    (S/optional-key :retry-limit) S/Int ; # Max # of retries for a single msg
    (S/optional-key :throttle) ThrottleConfig
-   (S/optional-key :proxy-host) S/Str
-   (S/optional-key :proxy-port) S/Int})
+   (S/optional-key :proxy-url) S/Str})
 
 (def ^:private default-config
   {:connections 2
@@ -143,10 +142,9 @@
   ([this req]
    (request! this req (async/chan 1 identity-xform-response identity)))
   ([{:keys [msg-queue config]} req chan]
-   (let [{:keys [proxy-host proxy-port]} config
+   (let [{:keys [proxy-url]} config
          req (cond-> (assoc req :result chan)
-               (some? proxy-host) (assoc :proxy-host proxy-host)
-               (some? proxy-port) (assoc :proxy-port proxy-port))]
+               (some? proxy-url) (assoc :proxy-url proxy-url))]
      (async/put! msg-queue req))
    chan))
 

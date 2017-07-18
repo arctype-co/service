@@ -16,7 +16,7 @@
    [crypto-password "0.1.3"
     :exclusions [commons-codec]]
    [io.forward/yaml "1.0.5"]
-   [http-kit "2.1.19"]
+   [http-kit "2.3.0-alpha2"]
    [log4j/log4j "1.2.17"]
    [org.postgresql/postgresql "9.4.1208"] ; postgres
    [prismatic/schema "1.1.6"]
