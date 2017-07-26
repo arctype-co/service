@@ -10,10 +10,40 @@
   {:queues-path S/Str ; directory name to read/write queues
    :queues-options {S/Keyword S/Any}})
 
-(S/defn raise!
-  [{:keys [queues]} topic data]
-  (Q/put! queues topic data))
+(def Schemas
+  {S/Keyword {S/Keyword S/Any}}) ; {topic -> {type -> schema}}
 
+(defn- compile-topic-schemas
+  [schemas]
+  (->> schemas
+       (map (fn [[topic schemas]]
+              [topic 
+               (->> schemas
+                    (map (fn [[event-type data-schema]]
+                           [event-type (S/validator data-schema)]))  
+                    (into {}))]))
+       (into {})))
+
+(defn- validate-data
+  [{:keys [compiled-topic-schemas]} topic event-type data]
+  (let [schemas (get compiled-topic-schemas topic)
+        validator (get schemas event-type)]
+    (when (nil? validator)
+      (throw (ex-info "Undefined event type"
+                      {:topic topic
+                       :event-type event-type})))
+    (validator data)))
+
+(defn- wrap-event
+  "Wrap an event by type and check it's schema."
+  [this topic event-type data]
+  {:event event-type
+   :timestamp (System/currentTimeMillis)
+   :data (validate-data this topic event-type data)})
+
+(S/defn raise!
+  [{:keys [queues] :as this} topic event-type data]
+  (Q/put! queues topic (wrap-event this topic event-type data)))
 
 (defn- start-handler-thread
   [{:keys [queues]} input handler]
@@ -56,7 +86,10 @@
   (async/<!! handler-thread))
 
 (S/defn create
-  [resource-name config :- Config]
+  [resource-name 
+   config :- Config 
+   schemas :- Schemas]
   (resource/make-resource
-    {:queues (Q/queues (:queues-path config) (:queues-options config))}
+    {:queues (Q/queues (:queues-path config) (:queues-options config))
+     :compiled-topic-schemas (compile-topic-schemas schemas)}
     resource-name))
