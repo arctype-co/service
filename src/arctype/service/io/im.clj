@@ -17,5 +17,7 @@
     (.resize op (int w) (int h))
     (when-let [quality (:quality options)] 
       (.quality op (double quality)))
+    (when-let [interlace (:interlace options)]
+      (.interlace op interlace))
     (.addImage op (into-array String [(str out-path)]))
     (.run cmd op (into-array Object []))))
