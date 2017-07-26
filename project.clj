@@ -18,6 +18,7 @@
    [io.forward/yaml "1.0.5"]
    [http-kit "2.3.0-alpha2"]
    [log4j/log4j "1.2.17"]
+   [org.im4java/im4java "1.4.0"] ; im
    [org.postgresql/postgresql "9.4.1208"] ; postgres
    [prismatic/schema "1.1.6"]
    [ring "1.4.0"]
