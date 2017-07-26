@@ -3,6 +3,7 @@
       Derived from https://github.com/runexec/ffmpeg-clj"}
   arctype.service.io.ffmpeg
   (:require 
+    [clojure.core.async :as async]
     [clojure.java.shell :refer [sh]]
     [clojure.string :as s]))
 
@@ -28,3 +29,8 @@
     (re-find #"version \S+" o)
     (s/split o #" ")
     (last o)))
+
+(defn ffmpeg-thread! [& args]
+  (async/thread
+    (try (apply ffmpeg! args)
+         (catch Exception e e))))
