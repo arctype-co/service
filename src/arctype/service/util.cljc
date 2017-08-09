@@ -11,6 +11,14 @@
         [cljs.core.async :as async]
         [schema.core :as S])))
 
+(defn map-keys
+  [func dict]
+  (into {} (map (fn [[k v]] [(func k) v]) dict)))
+
+(defn map-vals
+  [func dict]
+  (into {} (map (fn [[k v]] [k (func v)]) dict)))
+
 (defn rmerge [left right]
   (if (map? left)
     (if (map? right)
