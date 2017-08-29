@@ -4,33 +4,50 @@
   arctype.service.io.ffmpeg
   (:require 
     [clojure.core.async :as async]
-    [clojure.java.shell :refer [sh]]
+    [clojure.java.io :refer [reader]]
     [clojure.string :as s]))
 
 (def ^:dynamic *bin* "ffmpeg")
 
-(defn cmd [& argv] 
+(defn- cmd [argv] 
   (->> argv
        (map #(if (keyword? %) (str "-" (name %)) (str %)))
        (into [*bin*])))
 
-(defn bin [] *bin*)
+(defn start-ffmpeg! [& args]
+  (-> (Runtime/getRuntime)
+      (.exec (into-array String (cmd args)))))
 
-(defn ffmpeg! [& args]
-  (let [cmd! (apply sh (apply cmd args))
-        {:keys [exit out err]} cmd!]
-    (when-not (zero? exit)
+(defn wait-ffmpeg! [proc]
+  (let [stdin (.getOutputStream proc)
+        stderr (.getErrorStream proc)
+        stdout (.getInputStream proc)
+        _ (.close stdin)
+        exit (.waitFor proc)]
+    (if (zero? exit)
+      (slurp (reader stdout))
       (throw
-       (Exception. err)))
-      out))
+        (let [error-buf (slurp (reader stderr))]
+          (ex-info "FFmpeg error" {:status exit
+                                   :error error-buf}))))))
 
 (defn version [] 
-  (as-> (ffmpeg! "-version") o
-    (re-find #"version \S+" o)
-    (s/split o #" ")
-    (last o)))
+  (as-> (-> (start-ffmpeg! "-version")
+            (wait-ffmpeg!)) out
+    (re-find #"version \S+" out)
+    (s/split out #" ")
+    (last out)))
 
-(defn ffmpeg-thread! [& args]
-  (async/thread
-    (try (apply ffmpeg! args)
-         (catch Exception e e))))
+(defn ffmpeg-thread! [timeout-ms & args]
+  (async/go
+    (let [proc (apply start-ffmpeg! args)
+          wait-chan (async/thread
+                      (try (wait-ffmpeg! proc)
+                           (catch Exception e e)))
+          timeout-chan (async/timeout timeout-ms)
+          [result result-chan] (async/alts!! [wait-chan timeout-chan] :priority true)]
+      (if (= result-chan timeout-chan)
+        (do
+          (.destroy proc)
+          (ex-info "FFmpeg timeout!" {:timeout-ms timeout-ms}))
+        result))))
