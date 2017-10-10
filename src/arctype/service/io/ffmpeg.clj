@@ -2,10 +2,12 @@
       "FFMpeg Driver
       Derived from https://github.com/runexec/ffmpeg-clj"}
   arctype.service.io.ffmpeg
+  (:import 
+    [java.io BufferedReader StringReader])
   (:require 
     [clojure.core.async :as async]
     [clojure.java.io :refer [reader]]
-    [clojure.string :as s]))
+    [clojure.string :as string]))
 
 (def ^:dynamic *bin* "ffmpeg")
 
@@ -18,6 +20,15 @@
   (-> (Runtime/getRuntime)
       (.exec (into-array String (cmd args)))))
 
+(defn- parse-stderror
+  [error-buf]
+  (if-let [line (last (line-seq (BufferedReader. (StringReader. error-buf))))]
+    (let [msg (string/trim (last (string/split line #":")))]
+      (if (empty? msg)
+        "FFmpeg error"
+        msg))
+    "FFmpeg error"))
+
 (defn wait-ffmpeg! [proc]
   (let [stdin (.getOutputStream proc)
         stderr (.getErrorStream proc)
@@ -28,14 +39,16 @@
       (slurp (reader stdout))
       (throw
         (let [error-buf (slurp (reader stderr))]
-          (ex-info "FFmpeg error" {:status exit
-                                   :error error-buf}))))))
+          (ex-info (parse-stderror error-buf)
+                   {:status exit
+                    :error error-buf}))))))
 
 (defn version [] 
-  (as-> (-> (start-ffmpeg! "-version")
-            (wait-ffmpeg!)) out
+  (as-> 
+    (-> (start-ffmpeg! "-version")
+        (wait-ffmpeg!)) out
     (re-find #"version \S+" out)
-    (s/split out #" ")
+    (string/split out #" ")
     (last out)))
 
 (defn ffmpeg-thread! [timeout-ms & args]
