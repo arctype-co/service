@@ -23,21 +23,25 @@
   {(S/optional-key :connections) S/Int ; size of connection pool
    (S/optional-key :msg-queue-size) S/Int ; # of messages to buffer
    (S/optional-key :retry-limit) S/Int ; # Max # of retries for a single msg
+   (S/optional-key :retry-delay-ms) S/Int ; Milliseconds to wait between retries
    (S/optional-key :throttle) ThrottleConfig
    (S/optional-key :proxy-url) S/Str})
 
 (def ^:private default-config
   {:connections 2
    :msg-queue-size 16
-   :retry-limit 0})
+   :retry-limit 0
+   :retry-delay-ms 0})
 
 (defn- handle-response
-  [{:keys [result] :as request} response retry-count retry-limit]
+  [{:keys [result] :as request} response retry-count retry-limit retry-delay-ms]
   (if-let [error (:error response)]
     (if (< retry-count retry-limit)
       (do
         (log/warn error {:message "HTTP request failed, retrying."
                          :request (dissoc request :result)})
+        (when (> retry-delay-ms 0)
+          (<!! (async/timeout retry-delay-ms)))
         request)
       (when (some? result)
         ; return the error and move on
@@ -73,7 +77,7 @@
 (defn- worker-thread
   [{:keys [msg-queue config] :as this} thread-num]
   (thread-try
-    (let [{:keys [retry-limit]} config
+    (let [{:keys [retry-limit retry-delay-ms]} config
           client (HttpClient.)
           msg-throttle (create-throttle (:throttle config) msg-queue)]
       (loop [retry-msg nil
@@ -82,7 +86,9 @@
         (when-let [msg (or retry-msg (<!! msg-throttle))]
           (let [retry-msg
                 (let [response (do-request this (assoc msg :client client))]
-                  (handle-response msg response retry-count retry-limit))]
+                  (handle-response msg response retry-count 
+                                   (or (:retry-limit msg) retry-limit)
+                                   (or (:retry-delay-ms msg) retry-delay-ms)))]
             (if (some? retry-msg) 
               (recur retry-msg (inc retry-count))
               (recur nil 0))))))))
