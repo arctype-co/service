@@ -12,7 +12,6 @@
    [com.mchange/c3p0 "0.9.5.2"] ; postgres
    [cheshire "5.6.1"]
    [commons-codec/commons-codec "1.10"]
-   [compojure "1.5.0"]
    [crypto-password "0.1.3"
     :exclusions [commons-codec]]
    [factual/durable-queue "0.1.5"] ;durable-events
@@ -21,10 +20,7 @@
    [log4j/log4j "1.2.17"]
    [org.im4java/im4java "1.4.0"] ; im
    [org.postgresql/postgresql "9.4.1208"] ; postgres
-   [prismatic/schema "1.1.6"]
-   [ring "1.4.0"]
-   [ring-cors "0.1.7"]
-   [ring/ring-json "0.4.0"]
+   [prismatic/schema "1.1.7"]
    [sundbry/resource "0.4.0"]
    [throttler "1.0.0"
     :exclusions [org.clojure/clojure
