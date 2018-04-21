@@ -6,9 +6,14 @@
     [schema.core :as S]
     [sundbry.resource :as resource]))
 
+(def ^:private default-config
+  {:reset-corrupt? true})
+
 (def Config
   {:queues-path S/Str ; directory name to read/write queues
-   :queues-options {S/Keyword S/Any}})
+   :queues-options {S/Keyword S/Any}
+   (S/optional-key :reset-corrupt?) S/Bool ; Delete the queues when data is corrupted. If false, queue thread will abort on corrupt data.
+   })
 
 (def Schemas
   {S/Keyword {S/Keyword S/Any}}) ; {topic -> {type -> schema}}
@@ -51,7 +56,7 @@
     (loop []
       (when-let [task (async/<!! input)]
         (try 
-          (let [event (deref task)]
+          (let [event task]
             (handler event))
           (Q/complete! task)
           (catch Exception e
@@ -59,14 +64,31 @@
             (Q/retry! task)))
         (recur)))))
 
+(defn- safe-take!
+  [{:keys [config queues] :as this} topic]
+  (if (:reset-corrupt? config)
+    (if-let [data (try 
+                    (deref (Q/take! queues topic))
+                    (catch java.io.IOException io-error
+                      (log/error io-error {:message "Corrupt queue data. Resetting queue files. Data may be lost."
+                                           :exception-message (.getMessage io-error)
+                                           :topic topic})
+                      nil))]
+      data
+      (do
+        (Q/delete! queues)
+        (recur this topic)))
+    (deref (Q/take! queues topic))))
+
 (S/defn start-consumer
-  [{:keys [queues] :as this} topic buffer-size handler]
+  [this topic buffer-size handler]
   (let [input (async/chan (async/buffer buffer-size))
         reader-thread (doto (Thread.
                               (fn []
                                 (try 
                                   (loop []
-                                    (async/>!! input (Q/take! queues topic))
+                                    (let [data (safe-take! this topic)]
+                                      (async/>!! input data))
                                     (recur))
                                   (catch InterruptedException e
                                     (log/debug {:message "Event reader thread stopped."}))
