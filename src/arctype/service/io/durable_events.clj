@@ -76,6 +76,7 @@
                       nil))]
       data
       (do
+        ; Hazard: this will delete ALL topics
         (Q/delete! queues)
         (recur this topic)))
     (deref (Q/take! queues topic))))

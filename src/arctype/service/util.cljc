@@ -1,6 +1,7 @@
 (ns arctype.service.util
   #?(:clj
-      (:import [java.nio.file Files FileVisitor FileVisitResult])
+      (:import [java.nio.file Files FileVisitor FileVisitResult]))
+  #?(:clj
       (:require
         [clojure.core.async :as async]
         [clojure.tools.logging :as log]
@@ -150,7 +151,7 @@
                       (preVisitDirectory [path ex]
                         FileVisitResult/CONTINUE)
                       (visitFile [path ex]
-                        (Files/delete file)
+                        (Files/delete path)
                         FileVisitResult/CONTINUE)
                       (visitFileFailed [path ex]
                         FileVisitResult/CONTINUE))]
