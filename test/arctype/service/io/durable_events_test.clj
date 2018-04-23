@@ -4,6 +4,8 @@
     [java.nio.file.attribute FileAttribute])
   (:require
     [clojure.test :refer :all]
+    [clojure.tools.logging :as log]
+    [schema.core :as S]
     [arctype.service.util :refer [recursive-delete]]
     [arctype.service.io.durable-events :as events]))
 
@@ -23,3 +25,19 @@
                             {:queues-path *queues-path*
                              :queues-options {}}
                             {}))))
+
+(deftest test-rw-events
+  (let [instance (events/create :events
+                                {:queues-path *queues-path*
+                                 :queues-options {}}
+                                {:foo {:bar S/Any}})
+        event-count 100]
+    (is (some? instance))
+    (dotimes [n event-count]
+      (events/raise! instance :foo :bar {:message "hello" :n n}))
+    (events/sync! instance)
+    (let [counter (atom 0)
+          consumer (events/start-consumer instance :foo 10 (fn [evt] (swap! counter inc)))]
+      (Thread/sleep 500)
+      (events/stop-consumer consumer)
+      (is (= event-count @counter)))))

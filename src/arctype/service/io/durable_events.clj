@@ -50,13 +50,17 @@
   [{:keys [queues] :as this} topic event-type data]
   (Q/put! queues topic (wrap-event this topic event-type data)))
 
+(defn sync!
+  [{:keys [queues]}]
+  (Q/fsync queues))
+
 (defn- start-handler-thread
   [{:keys [queues]} input handler]
   (async/thread
     (loop []
       (when-let [task (async/<!! input)]
         (try 
-          (let [event task]
+          (let [event @task]
             (handler event))
           (Q/complete! task)
           (catch Exception e
@@ -68,7 +72,7 @@
   [{:keys [config queues] :as this} topic]
   (if (:reset-corrupt? config)
     (if-let [data (try 
-                    (deref (Q/take! queues topic))
+                    (Q/take! queues topic)
                     (catch java.io.IOException io-error
                       (log/error io-error {:message "Corrupt queue data. Resetting queue files. Data may be lost."
                                            :exception-message (.getMessage io-error)
@@ -79,7 +83,7 @@
         ; Hazard: this will delete ALL topics
         (Q/delete! queues)
         (recur this topic)))
-    (deref (Q/take! queues topic))))
+    (Q/take! queues topic)))
 
 (S/defn start-consumer
   [this topic buffer-size handler]
@@ -88,8 +92,8 @@
                               (fn []
                                 (try 
                                   (loop []
-                                    (let [data (safe-take! this topic)]
-                                      (async/>!! input data))
+                                    (let [task (safe-take! this topic)]
+                                      (async/>!! input task))
                                     (recur))
                                   (catch InterruptedException e
                                     (log/debug {:message "Event reader thread stopped."}))
@@ -112,7 +116,8 @@
   [resource-name 
    config :- Config 
    schemas :- Schemas]
-  (resource/make-resource
-    {:queues (Q/queues (:queues-path config) (:queues-options config))
-     :compiled-topic-schemas (compile-topic-schemas schemas)}
-    resource-name))
+  (let [config (merge default-config config)]
+    (resource/make-resource
+      {:queues (Q/queues (:queues-path config) (:queues-options config))
+       :compiled-topic-schemas (compile-topic-schemas schemas)}
+      resource-name)))
