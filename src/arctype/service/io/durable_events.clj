@@ -60,7 +60,7 @@
     (loop []
       (when-let [task (async/<!! input)]
         (try 
-          (let [event @task]
+          (let [event (:data task)]
             (handler event))
           (Q/complete! task)
           (catch Exception e
@@ -68,11 +68,15 @@
             (Q/retry! task)))
         (recur)))))
 
+(defn- read-task-data
+  [task]
+  (assoc task :data @task))
+
 (defn- safe-take!
   [{:keys [config queues] :as this} topic]
   (if (:reset-corrupt? config)
     (if-let [data (try 
-                    (Q/take! queues topic)
+                    (read-task-data (Q/take! queues topic))
                     (catch java.io.IOException io-error
                       (log/error io-error {:message "Corrupt queue data. Resetting queue files. Data may be lost."
                                            :exception-message (.getMessage io-error)
@@ -83,7 +87,7 @@
         ; Hazard: this will delete ALL topics
         (Q/delete! queues)
         (recur this topic)))
-    (Q/take! queues topic)))
+    (read-task-data (Q/take! queues topic))))
 
 (S/defn start-consumer
   [this topic buffer-size handler]
@@ -119,5 +123,6 @@
   (let [config (merge default-config config)]
     (resource/make-resource
       {:queues (Q/queues (:queues-path config) (:queues-options config))
-       :compiled-topic-schemas (compile-topic-schemas schemas)}
+       :compiled-topic-schemas (compile-topic-schemas schemas)
+       :config config}
       resource-name)))
