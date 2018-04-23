@@ -1,5 +1,6 @@
 (ns arctype.service.util
   #?(:clj
+      (:import [java.nio.file Files FileVisitor FileVisitResult])
       (:require
         [clojure.core.async :as async]
         [clojure.tools.logging :as log]
@@ -138,3 +139,19 @@
          (do ~@body)
          (catch Exception e#
            e#))))
+
+#?(:clj
+    (defn recursive-delete
+      [top-path]
+      (let [visitor (proxy [FileVisitor] []
+                      (postVisitDirectory [path ex]
+                        (Files/delete path)
+                        FileVisitResult/CONTINUE)
+                      (preVisitDirectory [path ex]
+                        FileVisitResult/CONTINUE)
+                      (visitFile [path ex]
+                        (Files/delete file)
+                        FileVisitResult/CONTINUE)
+                      (visitFileFailed [path ex]
+                        FileVisitResult/CONTINUE))]
+        (Files/walkFileTree top-path visitor))))
