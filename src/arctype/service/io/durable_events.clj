@@ -62,10 +62,8 @@
         (try 
           (let [event (:data task)]
             (handler event))
-          (Q/complete! task)
           (catch Exception e
-            (log/error e {:message "Event handler failed"})
-            (Q/retry! task)))
+            (log/error e {:message "Event handler failed"})))
         (recur)))))
 
 (defn- read-task-data
@@ -84,8 +82,7 @@
                       nil))]
       data
       (do
-        ; Hazard: this will delete ALL topics
-        (Q/delete! queues)
+        (Q/delete-q! queues topic)
         (recur this topic)))
     (read-task-data (Q/take! queues topic))))
 

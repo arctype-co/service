@@ -39,10 +39,22 @@
       (events/raise! instance :foo :bar {:message "hello" :n n}))
     (events/sync! instance)
     (let [counter (atom 0)
-          consumer (events/start-consumer instance :foo 10 (fn [evt] (swap! counter inc)))]
+          consumer (events/start-consumer instance :foo 1 (fn [evt] (swap! counter inc)))]
       (Thread/sleep 500)
       (events/stop-consumer consumer)
       (is (= event-count @counter)))))
+
+(deftest test-no-events
+  (let [instance (events/create :events
+                                {:queues-path (str *queues-path*)
+                                 :queues-options {}}
+                                {:foo {:bar S/Any}})]
+    (is (some? instance))
+    (let [counter (atom 0)
+          consumer (events/start-consumer instance :foo 1 (fn [evt] (swap! counter inc)))]
+      (Thread/sleep 500)
+      (events/stop-consumer consumer)
+      (is (= 0 @counter)))))
 
 (deftest test-rw-parallelism
   (let [instance (events/create :events
@@ -61,8 +73,8 @@
                        (Thread/sleep 10)
                        (recur (inc n)))))
         rd-counter (atom 0)
-        consumer-a (events/start-consumer instance :a 10 (fn [evt] (swap! rd-counter inc)))
-        consumer-b (events/start-consumer instance :b 10 (fn [evt] (swap! rd-counter inc)))]
+        consumer-a (events/start-consumer instance :a 1 (fn [evt] (swap! rd-counter inc)))
+        consumer-b (events/start-consumer instance :b 1 (fn [evt] (swap! rd-counter inc)))]
     (Thread/sleep 500)
     (reset! run-test? false)
     (events/stop-consumer consumer-a)
@@ -111,8 +123,8 @@
                        (Thread/sleep 10)
                        (recur (inc n)))))
         rd-counter (atom 0)
-        consumer-a (events/start-consumer instance :a 10 (fn [evt] (swap! rd-counter inc)))
-        consumer-b (events/start-consumer instance :b 10 (fn [evt] (swap! rd-counter inc)))]
+        consumer-a (events/start-consumer instance :a 1 (fn [evt] (swap! rd-counter inc)))
+        consumer-b (events/start-consumer instance :b 1 (fn [evt] (swap! rd-counter inc)))]
     (Thread/sleep 5000)
     (reset! run-test? false)
     (events/stop-consumer consumer-a)

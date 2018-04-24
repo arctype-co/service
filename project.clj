@@ -14,7 +14,7 @@
    [commons-codec/commons-codec "1.10"]
    [crypto-password "0.1.3"
     :exclusions [commons-codec]]
-   [factual/durable-queue "0.1.5"] ;durable-events
+   [factual/durable-queue "0.1.7-SNAPSHOT"] ;durable-events
    [io.forward/yaml "1.0.5"]
    [http-kit "2.3.0-alpha2"]
    [log4j/log4j "1.2.17"]
