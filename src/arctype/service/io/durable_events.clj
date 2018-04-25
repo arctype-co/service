@@ -64,6 +64,10 @@
             (handler event))
           (catch Exception e
             (log/error e {:message "Event handler failed"})))
+        (try
+          (Q/complete! task)
+          (catch Exception e
+            (log/warn e {:message "Task completion failed"})))
         (recur)))))
 
 (defn- read-task-data
