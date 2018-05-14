@@ -55,19 +55,28 @@
   (Q/fsync queues))
 
 (defn- start-handler-thread
-  [{:keys [queues]} input handler]
+  [{:keys [queues]} input handler {:keys [retry?]}]
   (async/thread
     (loop []
       (when-let [task (async/<!! input)]
-        (try 
-          (let [event (:data task)]
-            (handler event))
-          (catch Exception e
-            (log/error e {:message "Event handler failed"})))
-        (try
-          (Q/complete! task)
-          (catch Exception e
-            (log/warn e {:message "Task completion failed"})))
+        (let [complete? (try 
+                          (let [event (:data task)]
+                            (handler event)
+                            true)
+                          (catch Exception e
+                            (if retry?
+                              false
+                              (do (log/error e {:message "Event handler failed"})
+                                  true))))]
+          (if complete?
+            (try
+              (Q/complete! task)
+              (catch Exception e
+                (log/warn e {:message "Task completion failed"})))
+            (try
+              (Q/retry! task)
+              (catch Exception e
+                (log/warn e {:message "Task retry queuing failed"})))))
         (recur)))))
 
 (defn- read-task-data
@@ -90,27 +99,32 @@
         (recur this topic)))
     (read-task-data (Q/take! queues topic))))
 
+(def ConsumerOptions
+  {(S/optional-key :retry?) S/Bool ; Enable retrying failed handlers
+   })
+
 (S/defn start-consumer
-  [this topic buffer-size handler]
-  (let [input (async/chan (async/buffer buffer-size))
-        reader-thread (doto (Thread.
-                              (fn []
-                                (try 
-                                  (loop []
-                                    (let [task (safe-take! this topic)]
-                                      (async/>!! input task))
-                                    (recur))
-                                  (catch InterruptedException e
-                                    (log/debug {:message "Event reader thread stopped."}))
-                                  (catch Exception e
-                                    (log/fatal e {:message "Event reader thread failed!"}))
-                                  (finally 
-                                    (async/close! input)))))
-                        (.start))
-        handler-thread (start-handler-thread this input handler)]
-    {:reader-thread reader-thread
-     :handler-thread handler-thread
-     :input input}))
+  ([this topic buffer-size handler] (start-consumer this topic buffer-size handler {}))
+  ([this topic buffer-size handler options]
+   (let [input (async/chan (async/buffer buffer-size))
+         reader-thread (doto (Thread.
+                               (fn []
+                                 (try 
+                                   (loop []
+                                     (let [task (safe-take! this topic)]
+                                       (async/>!! input task))
+                                     (recur))
+                                   (catch InterruptedException e
+                                     (log/debug {:message "Event reader thread stopped."}))
+                                   (catch Exception e
+                                     (log/fatal e {:message "Event reader thread failed!"}))
+                                   (finally 
+                                     (async/close! input)))))
+                         (.start))
+         handler-thread (start-handler-thread this input handler options)]
+     {:reader-thread reader-thread
+      :handler-thread handler-thread
+      :input input})))
 
 (S/defn stop-consumer
   [{:keys [reader-thread handler-thread]}]
