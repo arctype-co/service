@@ -45,13 +45,31 @@
   (let [driver (resource/require this (:driver-name this))]
     (put-event! driver topic (wrap-event this topic event-type data))))
 
-(defn start-consumer
-  [this topic options handler]
-  {})
+(def ConsumerOptions
+  {(S/optional-key :stop-timeout-ms) S/Int ; Time allowed for stopping consumers
+   (S/optional-key :concurrency) S/Int ; Number of concurrent consumers (if supported)
+   (S/optional-key :retry?) S/Bool ; Automatic retry 
+   (S/optional-key :retry-delay-ms) S/Int ; Time to wait between retries
+   })
+
+(def ^:private default-consumer-options
+  {:stop-timeout-ms 10
+   :concurrency 1
+   :retry? false
+   :retry-delay-ms 500})
+
+(S/defn start-consumer
+  [this
+   topic
+   options :- ConsumerOptions
+   handler]
+  (let [driver (resource/require this (:driver-name this))]
+    (start-event-consumer driver topic (merge default-consumer-options options) handler)))
 
 (defn stop-consumer
-  [consumer]
-  nil)
+  [this consumer]
+  (let [driver (resource/require this (:driver-name this))]
+    (stop-event-consumer driver consumer)))
 
 (S/defn create
   [resource-name

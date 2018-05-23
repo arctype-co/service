@@ -17,7 +17,11 @@
 (defprotocol PEventProducer
   (put-event! [this topic data]))
 
-; Provide default implementation
+(defprotocol PEventConsumer
+  (start-event-consumer [this topic options handler])
+  (stop-event-consumer [this consumer]))
+
+; Provide default implementations
 (extend-type Object
   PLifecycle
   (start [this] this)
