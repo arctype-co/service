@@ -14,6 +14,9 @@
 (defprotocol PJdbcConnection
   (conn [this]))
 
+(defprotocol PEventProducer
+  (put-event! [this topic data]))
+
 ; Provide default implementation
 (extend-type Object
   PLifecycle
