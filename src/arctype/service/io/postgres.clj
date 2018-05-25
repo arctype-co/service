@@ -18,9 +18,10 @@
   {:creds 
    {(S/optional-key :classname) (S/enum "org.postgresql.Driver")
     (S/optional-key :subprotocol) (S/enum "postgresql")
-    :subname S/Str
+    (S/optional-key :subname) S/Str
     :user S/Str
-    :password S/Str}
+    :password S/Str
+    S/Keyword S/Any}
    (S/optional-key :max-idle-time-s) S/Int
    (S/optional-key :excess-idle-time-s) S/Int
    (S/optional-key :serializable?) S/Bool ; Enable serializable connection pool
