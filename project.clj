@@ -8,7 +8,6 @@
    [org.clojure/tools.namespace "0.2.10"]
    [org.clojure/tools.nrepl "0.2.12"]
    [org.clojure/tools.logging "0.3.1"]
-   [org.xerial/sqlite-jdbc "3.16.1"]
    [com.mchange/c3p0 "0.9.5.2"] ; postgres
    [cheshire "5.6.1"]
    [commons-codec/commons-codec "1.10"]
