@@ -45,7 +45,10 @@
    customizer-class]
   (let [cpds (doto (ComboPooledDataSource.)
                (.setDriverClass (:classname creds)) 
-               (.setJdbcUrl (str "jdbc:" (:subprotocol creds) ":" (:subname creds)))
+               (.setJdbcUrl (str "jdbc:" (:subprotocol creds) ":" (or (:subname creds)
+                                                                      (str "//" (:host creds) 
+                                                                           (when (some? (:port creds)) ":") (:port creds)
+                                                                           (when (some? (:dbname creds)) "/") (:dbname creds)))))
                (.setUser (:user creds))
                (.setPassword (:password creds))
                ;; expire excess connections after 30 minutes of inactivity:
@@ -59,7 +62,8 @@
 (defn- disconnect
   "Release a jdbc connection pool"
   [db]
-  (DataSources/destroy (:datasource db)) 
+  (when (some? db)
+    (DataSources/destroy (:datasource db)))
   nil)
 
 (defn health-check!
@@ -94,16 +98,19 @@
 (defrecord PostgresClient [config db serial-db]
   PLifecycle
   (start [this]
-    (log/info "Starting Postgres client")
-    (cond-> this
-        true (assoc :db (connect config read-committed-customizer))
-        (:serializable? config) (assoc :serial-db (connect config serializable-customizer))))
+    (log/info {:message "Starting Postgres client"})
+    (as-> this this
+        (assoc this :db (connect config read-committed-customizer))
+        (assoc this :datasource (:datasource (:db this)))
+        (cond-> this
+          (:serializable? config) (assoc :serial-db (connect config serializable-customizer)))))
 
   (stop [this]
-    (log/info "Stopping Postgres client")
-    (cond-> this
-      (:serializable? config) (update :serial-db disconnect)
-      true (update :db disconnect)))
+    (log/info {:message "Stopping Postgres client"})
+    (-> this
+      (update :serial-db disconnect)
+      (update :db disconnect)
+      (dissoc :datasource)))
   
   PJdbcConnection
 
