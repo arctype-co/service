@@ -41,9 +41,19 @@
    :data (validate-data this topic event-type data)})
 
 (defn raise!
-  [this topic event-type data]
+  ([this topic event-type data]
+   (let [driver (resource/require this (:driver-name this))]
+     (put-event! driver topic (wrap-event this topic event-type data))))
+  ([this topic event-type data-key data]
+   (let [driver (resource/require this (:driver-name this))]
+     (put-event! driver topic (assoc (wrap-event this topic event-type)
+                                     :events/key data-key)))))
+
+(defn delete!
+  [this topic data-key]
   (let [driver (resource/require this (:driver-name this))]
-    (put-event! driver topic (wrap-event this topic event-type data))))
+    (put-event! driver topic {:events/key data-key
+                              :events/delete true})))
 
 (def ConsumerOptions
   {(S/optional-key :stop-timeout-ms) S/Int ; Time allowed for stopping consumers
