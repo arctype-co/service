@@ -21,6 +21,9 @@
   (start-event-consumer [this topic options handler])
   (stop-event-consumer [this consumer]))
 
+(defprotocol PClientDecorator
+  (client [this]))
+
 ; Provide default implementations
 (extend-type Object
   PLifecycle
