@@ -46,7 +46,7 @@
      (put-event! driver topic (wrap-event this topic event-type data))))
   ([this topic event-type data-key data]
    (let [driver (resource/require this (:driver-name this))]
-     (put-event! driver topic (assoc (wrap-event this topic event-type)
+     (put-event! driver topic (assoc (wrap-event this topic event-type data)
                                      :events/key data-key)))))
 
 (defn delete!
