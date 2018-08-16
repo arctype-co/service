@@ -60,7 +60,7 @@
    (S/optional-key :concurrency) S/Int ; Number of concurrent consumers (if supported)
    (S/optional-key :retry?) S/Bool ; Automatic retry 
    (S/optional-key :retry-delay-ms) S/Int ; Time to wait between retries
-   })
+   S/Keyword S/Any})
 
 (def ^:private default-consumer-options
   {:stop-timeout-ms 10
