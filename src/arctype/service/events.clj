@@ -33,7 +33,7 @@
                        :event-type event-type})))
     (validator data)))
 
-(defn- wrap-event
+(defn wrap-event
   "Wrap an event by type and check it's schema."
   [this topic event-type data]
   {:event event-type
