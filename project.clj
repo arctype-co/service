@@ -1,7 +1,7 @@
 (defproject arctype/service "0.1.0-SNAPSHOT" 
   :dependencies
-  [[org.clojure/clojure "1.8.0"]
-   [org.clojure/core.async "0.2.374"]
+  [[org.clojure/clojure "1.10.0"]
+   [org.clojure/core.async "0.4.490"]
    [org.clojure/core.match "0.3.0-alpha4"]
    [org.clojure/java.jdbc "0.7.0-alpha1"]
    [org.clojure/tools.cli "0.3.3"]
@@ -18,7 +18,7 @@
    [log4j/log4j "1.2.17"]
    [org.im4java/im4java "1.4.0"] ; im
    [org.postgresql/postgresql "9.4.1208"] ; postgres
-   [prismatic/schema "1.1.7"]
+   [prismatic/schema "1.1.10"]
    [sundbry/resource "0.4.0"]
    [throttler "1.0.0"
     :exclusions [org.clojure/clojure
