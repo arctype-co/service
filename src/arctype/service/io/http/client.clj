@@ -10,9 +10,7 @@
     [throttler.core :as throttler]
     [arctype.service.util :refer [thread-try]]
     [arctype.service.protocol :refer :all]
-    [arctype.service.core :as sys-core])
-  (:import
-    [org.httpkit.client HttpClient]))
+    [arctype.service.core :as sys-core]))
 
 (def ThrottleConfig
   {:rate S/Int
@@ -74,11 +72,17 @@
     (throttler/throttle-chan msg-queue rate period burst)
     msg-queue))
 
+(defn- sni-configure
+  [^javax.net.ssl.SSLEngine ssl-engine ^java.net.URI uri]
+  (let [^javax.net.ssl.SSLParameters ssl-params (.getSSLParameters ssl-engine)]
+    (.setServerNames ssl-params [(javax.net.ssl.SNIHostName. (.getHost uri))])
+    (.setSSLParameters ssl-engine ssl-params)))
+
 (defn- worker-thread
   [{:keys [msg-queue config] :as this} thread-num]
   (thread-try
     (let [{:keys [retry-limit retry-delay-ms]} config
-          client (HttpClient.)
+          client (http/make-client {:ssl-configurer sni-configure})
           msg-throttle (create-throttle (:throttle config) msg-queue)]
       (loop [retry-msg nil
              retry-count 0]
