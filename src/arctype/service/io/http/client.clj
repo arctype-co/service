@@ -74,6 +74,7 @@
 
 (defn- sni-configure
   [^javax.net.ssl.SSLEngine ssl-engine ^java.net.URI uri]
+  (.setUseClientMode ssl-engine true)
   (let [^javax.net.ssl.SSLParameters ssl-params (.getSSLParameters ssl-engine)]
     (.setServerNames ssl-params [(javax.net.ssl.SNIHostName. (.getHost uri))])
     (.setSSLParameters ssl-engine ssl-params)))
