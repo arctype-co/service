@@ -1,4 +1,4 @@
-(defproject arctype/service "1.0.1-SNAPSHOT" 
+(defproject arctype/service "1.0.1" 
   :dependencies
   [[org.clojure/clojure "1.10.0"]
    [org.clojure/core.async "0.4.490"]
