@@ -1,4 +1,4 @@
-(defproject arctype/service "1.0.1" 
+(defproject arctype/service "1.0.2" 
   :dependencies
   [[org.clojure/clojure "1.10.0"]
    [org.clojure/core.async "0.4.490"]
@@ -13,7 +13,7 @@
    [commons-codec/commons-codec "1.10"]
    [crypto-password "0.1.3"
     :exclusions [commons-codec]]
-   [io.forward/yaml "1.0.5"]
+   [io.forward/yaml "1.0.9"]
    [http-kit "2.4.0-alpha3"]
    [log4j/log4j "1.2.17"]
    [org.im4java/im4java "1.4.0"] ; im
