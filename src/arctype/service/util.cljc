@@ -156,3 +156,7 @@
                       (visitFileFailed [path ex]
                         FileVisitResult/CONTINUE))]
         (Files/walkFileTree top-path visitor))))
+
+(defn redact
+  [dict path]
+  (assoc-in dict path "********"))
