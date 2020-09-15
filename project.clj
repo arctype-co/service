@@ -1,7 +1,6 @@
 (defproject arctype/service "1.1.0-SNAPSHOT" 
   :dependencies
   [[org.clojure/clojure "1.10.1"]
-   [org.clojure/core.async "0.4.490"]
    [org.clojure/tools.logging "0.3.1"]
    [commons-codec/commons-codec "1.10"]
    [crypto-password "0.1.3"
