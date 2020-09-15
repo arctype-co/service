@@ -10,7 +10,6 @@
     :exclusions [org.flatland/ordered]]
    [org.flatland/ordered "1.5.7"]
    [http-kit "2.4.0-alpha3"]
-   [org.im4java/im4java "1.4.0"] ; im
    [prismatic/schema "1.1.10"]
    [sundbry/resource "0.4.0"]
    [throttler "1.0.0"
