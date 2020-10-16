@@ -159,4 +159,6 @@
 
 (defn redact
   [dict path]
-  (assoc-in dict path "********"))
+  (if (some? (get-in dict path))
+    (assoc-in dict path "********")
+    dict))
