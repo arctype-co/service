@@ -162,3 +162,16 @@
   (if (some? (get-in dict path))
     (assoc-in dict path "********")
     dict))
+
+(defn simple-keys
+  "Filters out entries with prefix keyword-ns
+   in namespaced-dict"
+  [namespaced-dict keyword-ns]
+  (let [ns-name (name keyword-ns)]
+    (reduce-kv
+      (fn [dict k v]
+        (if (= ns-name (namespace k))
+          (assoc dict (keyword (name k)) v)
+          dict))
+      {}
+      namespaced-dict)))
