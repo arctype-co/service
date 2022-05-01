@@ -1,4 +1,4 @@
-(defproject arctype/service "1.2.0-SNAPSHOT" 
+(defproject co.arctype/service "1.2.0" 
   :dependencies
   [[org.clojure/clojure "1.11.1"]
    [org.clojure/tools.logging "1.2.4"]
