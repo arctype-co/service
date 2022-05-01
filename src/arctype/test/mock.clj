@@ -1,4 +1,4 @@
-(ns arctype.mock.protocol
+(ns arctype.test.mock
   (:import
    [java.nio ByteBuffer])
   (:require
